@@ -1,4 +1,6 @@
 name: PR Time Window Enforcement
+permissions:
+  pull-requests: write
 
 on:
   pull_request:
