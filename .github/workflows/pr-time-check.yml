@@ -1,0 +1,37 @@
+name: PR Time Window Enforcement
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  check-pr-time:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check PR creation time (UTC)
+        run: |
+          # Get PR creation time in ISO format
+          PR_CREATED_AT="${{ github.event.pull_request.created_at }}"
+
+          # Convert to seconds since epoch
+          PR_TIME=$(date -d "$PR_CREATED_AT" +%s)
+
+          # Define allowed UTC window
+          EVENT_DATE="2026-02-26"
+          START_TIME=$(date -d "$EVENT_DATE 13:50:00 UTC" +%s)
+          END_TIME=$(date -d "$EVENT_DATE 14:30:00 UTC" +%s)
+          if [ "$PR_TIME" -lt "$START_TIME" ] || [ "$PR_TIME" -gt "$END_TIME" ]; then
+            echo "PR opened outside allowed time window."
+            exit 1
+          else
+            echo "PR opened within allowed window."
+          fi
+
+      - name: Close PR if outside allowed window
+        if: failure()
+        uses: peter-evans/close-pull@v3
+        with:
+          comment: |
+            ❌ This PR was opened outside the allowed submission window (7:20–8:00 PM IST).
+            It has been automatically closed.
